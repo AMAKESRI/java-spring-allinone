@@ -1,2 +1,2 @@
 server:
-  port: 8081
+  port: "${port:8081}"
