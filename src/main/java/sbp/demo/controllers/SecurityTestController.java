@@ -8,8 +8,23 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("security-test")
 public class SecurityTestController {
 
-    @GetMapping
-    String testSecurity() {
-        return "Spring Security is well configured";
+    @GetMapping("/public")
+    String publicURL() {
+        return "This endpoint is public";
+    }
+
+    @GetMapping("/private")
+    String privateURL() {
+        return "This endpoint is private";
+    }
+
+    @GetMapping("/user")
+    String userURL() {
+        return "This endpoint is connected user with role USER";
+    }
+
+    @GetMapping("/admin")
+    String adminURL() {
+        return "This endpoint is connected user with role ADMIN";
     }
 }
