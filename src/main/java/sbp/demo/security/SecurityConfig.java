@@ -33,8 +33,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
 //    enable HTTP Security
     protected void configure(HttpSecurity http) throws Exception {
-
         http.authorizeRequests()
+                .antMatchers("/h2-console/**").permitAll()
+                // basic security endpoint for testing spring security
                 .antMatchers("/security-test/public").permitAll()
                 .antMatchers("/security-test/user/**").access("hasRole('USER')")
                 .antMatchers("/security-test/admin/**").hasRole("ADMIN")
@@ -48,5 +49,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 ;
 
 //        Spring Security automatically configures a logout endpoint "/logout"
+
+
+        http.csrf().ignoringAntMatchers("/h2-console/**"); // ignore CSRF protection of Spring Security for h2 console to enable the execution of h2 console requests
+        http.headers().frameOptions().sameOrigin(); // by default the X-Frame-Options header added to the http response has "DENY", which prevents the html frames to be rendered for h2 console.
     }
 }
