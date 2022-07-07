@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/jdbc_auth_db
+    username: root
+    password: toor
+  sql:
+    init:
+      platform: mysql
+      mode: always
+  jpa:
+    hibernate:
+      ddl-auto: none
