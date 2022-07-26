@@ -6,7 +6,10 @@ spring:
   sql:
     init:
       platform: mysql
-      mode: always
+      mode: always # to always initialize a database using scripts, because script-based initialization is performed by default only for embedded databases
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: create-drop # this just for tests, but for production 'update' value is the safest one, but again if there is db script migration 'none' is highly recommended as DBAs do review for DB changes
+    generate-ddl: true # switches the feature on and off and is vendor independent.
+    show-sql: true
+    defer-datasource-initialization: true # to keep both Hibernate automatic schema generation (which comes first) in conjugation with script-based schema creation and data population
