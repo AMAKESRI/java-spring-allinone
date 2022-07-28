@@ -3,9 +3,6 @@ package sbp.demo.models;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
-
-import java.util.List;
 
 @NoArgsConstructor
 @Getter

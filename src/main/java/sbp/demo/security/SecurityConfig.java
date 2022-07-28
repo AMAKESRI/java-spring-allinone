@@ -1,21 +1,23 @@
 package sbp.demo.security;
 
 import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Resource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.userdetails.User;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.context.WebApplicationContext;
+import sbp.demo.configs.security.JwtConfig;
+import sbp.demo.security.filters.JwtTokenFilter;
+import sbp.demo.security.utils.JwtTokenUtil;
 import sbp.demo.services.CustomUserDetailsService;
-
-import javax.sql.DataSource;
 
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
@@ -28,11 +30,27 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private WebApplicationContext applicationContext;
 
+    @Autowired
+    private JwtConfig jwtConfig;
+
     private CustomUserDetailsService customUserDetailsService;
+
+    @Autowired
+    private JwtTokenFilter jwtTokenFilter;
 
     @PostConstruct
     public void completeSetup() {
+        // inject Jwt config pragmatically as JwtTokenUtil is not spring bean and it can not automatically extract values from to properties files
+        JwtTokenUtil.setJwtConfig(jwtConfig);
+
+        // CustomUserDetailsService is bean that is only accessible in application context created by the IoC container, and SpringContext is independent from it
         customUserDetailsService = applicationContext.getBean(CustomUserDetailsService.class);
+    }
+
+    @Override
+    @Bean
+    public AuthenticationManager authenticationManagerBean() throws Exception {
+        return super.authenticationManagerBean();
     }
 
     @Bean
@@ -84,6 +102,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         http.authorizeRequests()
                 .antMatchers("/h2-console/**").permitAll()
                 // basic security endpoint for testing spring security
+                .antMatchers("/auth/**").permitAll()
                 .antMatchers("/security-test/public").permitAll()
                 .antMatchers("/security-test/user/**").access("hasRole('USER')")
                 .antMatchers("/security-test/admin/**").hasRole("ADMIN")
@@ -99,7 +118,29 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 //        Spring Security automatically configures a logout endpoint "/logout"
 
 
-        http.csrf().ignoringAntMatchers("/h2-console/**"); // ignore CSRF protection of Spring Security for h2 console to enable the execution of h2 console requests
+        // http.csrf().ignoringAntMatchers("/h2-console/**"); // ignore CSRF protection of Spring Security for h2 console to enable the execution of h2 console requests
+        http.csrf().disable(); // disable CSRF to be able do post requests
         http.headers().frameOptions().sameOrigin(); // by default the X-Frame-Options header added to the http response has "DENY", which prevents the html frames to be rendered for h2 console.
+
+        // Set session management to stateless
+        http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+
+//        // Set unauthorized requests exception handler
+//        http.exceptionHandling()
+//                .authenticationEntryPoint(
+//                        (request, response, ex) -> {
+//                            response.sendError(
+//                                    HttpServletResponse.SC_UNAUTHORIZED,
+//                                    ex.getMessage()
+//                            );
+//                        }
+//                );
+
+        // Add JWT token filter before Spring Security filters
+        http.addFilterBefore(
+                jwtTokenFilter,
+                UsernamePasswordAuthenticationFilter.class
+        );
+
     }
 }
